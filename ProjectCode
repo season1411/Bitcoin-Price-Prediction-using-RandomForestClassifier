@@ -1,0 +1,71 @@
+
+
+import pandas as pd
+import os
+
+df = pd.read_csv("bitcoin_dataset.csv", parse_dates=['Date'])
+df.shape
+
+df['btc_rewards'] = df['btc_miners_revenue'] - df['btc_transaction_fees']
+
+interest = ["btc_market_price","btc_total_bitcoins", "btc_difficulty", "btc_rewards", "btc_transaction_fees", "btc_n_unique_addresses"]
+df2 = df[interest]
+df2.describe()
+
+pd.plotting.register_matplotlib_converters()
+import matplotlib.pyplot as plt
+%matplotlib inline
+import seaborn as sns
+
+sns.lineplot(data=df2.btc_market_price, label = "Price of Bitcoin Over the Years")
+
+sns.lineplot(data=df2.btc_total_bitcoins, label = "Total Bitcoins Mined Over the Years")
+
+sns.lineplot(data=df2.btc_transaction_fees, label = "Transaction Fees Over the Years")
+
+sns.lineplot(data=df2.btc_rewards, label = "Total Value of Block Rewards Paid to Miners Over the Years")
+
+sns.lineplot(data=df2.btc_difficulty, label = "Difficulty Over the Years")
+
+sns.lineplot(data=df2.btc_n_unique_addresses, label = "Unique Addresses Over the Years")
+
+df2.set_index('Date', inplace = True)
+df3 = df2.query("Date == '2010-05-19' or Date == '2011-05-19' or Date == '2012-05-19' or Date == '2013-05-19'  or Date == '2014-05-19'  or Date == '2015-05-19' or Date == '2016-05-19'  or Date == '2017-05-19'")
+df3.pct_change()
+df4=df3.pct_change()
+df4.style.format("{:.2%}")
+
+plt.figure(figsize=(50,10))
+sns.pairplot(df2,
+             x_vars = ["btc_total_bitcoins", "btc_difficulty", "btc_rewards", "btc_transaction_fees", "btc_n_unique_addresses"],
+             y_vars = ["btc_market_price"], kind = 'reg')
+
+df2.reset_index(inplace=True)
+df2['Year'] = df2['Date'].dt.year
+import matplotlib.pyplot as plt
+plt.figure(figsize=(6,3))
+sns.pairplot(df2,
+             x_vars = ["btc_total_bitcoins", "btc_difficulty", "btc_rewards", "btc_transaction_fees", "btc_n_unique_addresses"],
+             y_vars = ["btc_market_price"], kind = 'scatter', hue = 'Year', palette="husl").fig.set_size_inches(16,4)
+features = ["btc_total_bitcoins", "btc_difficulty", "btc_rewards", "btc_transaction_fees", "btc_n_unique_addresses"]
+X = df2[features]
+y = df2['btc_market_price']
+
+from sklearn.model_selection import train_test_split
+train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1)
+
+from sklearn.ensemble import RandomForestRegressor
+rf_model = RandomForestRegressor(random_state=1)
+
+rf_model.fit(train_X, train_y)
+
+rf_pred = rf_model.predict(val_X)
+
+print(rf_model.predict(X.tail()))
+df2['btc_market_price'].tail()
+
+from sklearn.metrics import mean_absolute_error
+rf_val_mae = mean_absolute_error(val_y,rf_pred)
+rf_val_mae
+
+
